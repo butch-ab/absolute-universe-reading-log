@@ -1,19 +1,21 @@
-# Absolute Universe Reading Log
+# DC Reading Logs
 
-Personal tracker for DC Absolute Universe in Comic Book Herald publication order.
+Two personal trackers. Notes stay in your browser, not in this repo.
 
-## Live site
+## Live sites
 
-https://butch-ab.github.io/absolute-universe-reading-log/
+- Absolute Universe: https://butch-ab.github.io/absolute-universe-reading-log/
+- Mainline DC (All In / Next Level): https://butch-ab.github.io/absolute-universe-reading-log/mainline/
 
 ## Turn on Pages (one time)
 
 1. Open **Settings → Pages**
 2. Source: **GitHub Actions** (preferred) or **Deploy from a branch** → `main` / root
-3. Save. The site is usually live within a minute.
+3. Save.
 
-Your Read/Unread notes stay in the browser on that URL. They are not stored in this repo.
+## Files
 
-## Privacy
+- `/index.html` + `/data.json` — Absolute Universe
+- `/mainline/index.html` + `/mainline/data.json` — Mainline DC
 
-The issue list is public. Your thoughts are not — they live in localStorage on your phone or computer.
+If a data file is missing after a push, upload `pages-data.json` or `pages-mainline-data.json` from the project folder with those names.
