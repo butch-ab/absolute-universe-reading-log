@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mainline DC Reading Log</title>
+<meta name="description" content="Personal reading log for mainline DC (All In / Next Level). Reviews stay locked until you mark an issue Read.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Outfit:wght@360;450;580;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090e;
+  --bg2: #0c1018;
+  --panel: #121826;
+  --panel2: #182132;
+  --line: rgba(212,177,90,.16);
+  --line2: rgba(244,234,212,.08);
+  --gold: #d4b15a;
+  --gold2: #f0d48a;
+  --cream: #f3ead6;
+  --mute: #9aa3b5;
+  --dim: #6d7688;
+  --ok: #7dcea0;
+  --okbg: rgba(125,206,160,.12);
+  --read: #7dcea0;
+  --reading: #7eb6ff;
+  --readingbg: rgba(126,182,255,.12);
+  --skip: #e0b36a;
+  --skipbg: rgba(224,179,106,.12);
+  --up: #c4a0ff;
+  --upbg: rgba(196,160,255,.12);
+  --lock: #8b93a7;
+  --danger: #e07a7a;
+  --shadow: 0 24px 60px rgba(0,0,0,.45);
+  --radius: 18px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--cream); font-family: Outfit, system-ui, sans-serif; }
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(212,177,90,.08), transparent 50%),
+    radial-gradient(900px 600px at 100% 0%, rgba(80,40,20,.18), transparent 45%),
+    var(--bg);
+}
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--gold); }
+
+.app { max-width: 1360px; margin: 0 auto; padding: 28px 22px 80px; }
+
+.top {
+  display: flex; gap: 24px; align-items: flex-end; justify-content: space-between;
+  border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow {
+  letter-spacing: .22em; text-transform: uppercase; font-size: 11px; color: var(--gold);
+}
+h1 {
+  font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: clamp(32px, 5vw, 54px);
+  line-height: .95; margin: 0; letter-spacing: -.03em;
+}
+.sub { color: var(--mute); max-width: 62ch; line-height: 1.45; font-size: 14.5px; }
+
+.nav {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.nav button {
+  background: transparent; border: 1px solid var(--line2); color: var(--mute);
+  padding: 8px 12px; border-radius: 999px; font-size: 13px;
+}
+.nav button[aria-current="page"] {
+  background: var(--gold); color: #1a1406; border-color: var(--gold); font-weight: 700;
+}
+
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 18px 0 22px; }
+.kpi {
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; padding: 14px 16px;
+}
+.kpi b { display: block; font-family: Fraunces, serif; font-size: 28px; line-height: 1; color: var(--gold2); }
+.kpi span { color: var(--dim); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+
+.layout { display: grid; grid-template-columns: 1fr 420px; gap: 18px; align-items: start; }
+@media (max-width: 1040px) {
+  .layout { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .app { padding: 16px 14px 40px; }
+  .issue { min-height: 64px; -webkit-tap-highlight-color: rgba(212,177,90,.18); }
+  .sheet-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(4,6,10,.72);
+    z-index: 80;
+  }
+  body.sheet-open .sheet-backdrop { display: block; }
+  body.sheet-open { overflow: hidden; }
+  .detail {
+    display: none;
+    position: fixed !important;
+    top: auto; right: 0; bottom: 0; left: 0;
+    z-index: 90;
+    width: 100%;
+    max-height: min(92dvh, 920px);
+    min-height: 0;
+    border-radius: 22px 22px 0 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+    box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+  }
+  body.sheet-open .detail { display: block; }
+  .sheet-handle {
+    width: 42px; height: 4px; border-radius: 99px;
+    background: rgba(243,234,214,.28);
+    margin: 2px auto 12px;
+  }
+  .sheet-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-bottom: 8px;
+  }
+}
+@media (min-width: 1041px) {
+  .sheet-backdrop { display: none !important; }
+  .sheet-handle { display: none; }
+  .close-sheet { display: none !important; }
+}
+
+.toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;
+}
+.search {
+  flex: 1; min-width: 180px; background: var(--panel); border: 1px solid var(--line2);
+  border-radius: 12px; padding: 10px 12px; outline: none;
+}
+.search:focus { border-color: var(--gold); }
+.toolbar select {
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 12px; padding: 10px 12px;
+}
+.chiprow { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip {
+  background: var(--panel); border: 1px solid var(--line2); color: var(--mute);
+  border-radius: 999px; padding: 5px 10px; font-size: 12px;
+}
+.chip.on { border-color: var(--gold); color: var(--gold2); }
+
+.list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.issue {
+  display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center;
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 16px;
+  padding: 12px 14px; text-align: left; width: 100%;
+  border-left: 3px solid transparent;
+}
+.issue:hover { border-color: var(--line); }
+.issue.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(212,177,90,.25); }
+.issue .n { font-family: Fraunces, serif; color: var(--dim); font-size: 18px; }
+.issue h3 { margin: 0; font-size: 15px; font-weight: 580; }
+.issue p { margin: 2px 0 0; color: var(--mute); font-size: 12.5px; }
+.badge {
+  font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px;
+  border-radius: 999px; border: 1px solid var(--line2); color: var(--mute); white-space: nowrap;
+}
+.badge.read { color: var(--read); background: var(--okbg); border-color: transparent; }
+.badge.reading { color: var(--reading); background: var(--readingbg); border-color: transparent; }
+.badge.skipped { color: var(--skip); background: var(--skipbg); border-color: transparent; }
+.badge.upcoming { color: var(--up); background: var(--upbg); border-color: transparent; }
+.badge.optional { color: var(--skip); }
+.badge.skip-ok { color: var(--danger); }
+
+.s-batman { border-left-color: #d4b15a; }
+.s-wonder { border-left-color: #c45c4a; }
+.s-superman { border-left-color: #4f8fd0; }
+.s-flash { border-left-color: #d06a3a; }
+.s-martian { border-left-color: #3fa37a; }
+.s-lantern { border-left-color: #3f9a4a; }
+.s-arrow { border-left-color: #5a8f3a; }
+.s-cat { border-left-color: #8a6cad; }
+.s-evil { border-left-color: #8b2e2e; }
+.s-other { border-left-color: #4a5568; }
+
+.detail {
+  position: sticky; top: 16px;
+  background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 22px;
+  min-height: 520px; box-shadow: var(--shadow);
+}
+.detail .kicker { color: var(--gold); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
+.detail h2 { font-family: Fraunces, serif; font-weight: 500; font-size: 30px; margin: 6px 0 8px; line-height: 1.05; }
+.meta { color: var(--mute); font-size: 13.5px; line-height: 1.45; margin-bottom: 14px; }
+.note {
+  background: rgba(212,177,90,.06); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; color: var(--cream); font-size: 13.5px; line-height: 1.5; margin-bottom: 16px;
+}
+.form { display: grid; gap: 10px; }
+.form label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form select, .form input, .form textarea {
+  width: 100%; background: var(--bg2); border: 1px solid var(--line2); border-radius: 12px;
+  padding: 10px 12px; outline: none;
+}
+.form textarea { min-height: 140px; resize: vertical; line-height: 1.45; }
+.form select:focus, .form input:focus, .form textarea:focus { border-color: var(--gold); }
+.savebar { display: flex; gap: 8px; flex-wrap: wrap; }
+.savebar button, .ghost {
+  border-radius: 12px; padding: 10px 14px; border: 1px solid var(--gold); background: var(--gold);
+  color: #1a1406; font-weight: 700;
+}
+.ghost { background: transparent; color: var(--gold); }
+.hint { color: var(--dim); font-size: 12.5px; }
+
+.lockbox, .pendingbox, .reviewbox {
+  margin-top: 16px; border-radius: 14px; padding: 14px 16px; border: 1px dashed var(--line);
+}
+.lockbox { color: var(--lock); background: rgba(255,255,255,.02); }
+.pendingbox { background: var(--skipbg); border-style: solid; border-color: rgba(224,179,106,.3); }
+.reviewbox { background: var(--okbg); border-style: solid; border-color: rgba(125,206,160,.28); }
+.lockbox h3, .pendingbox h3, .reviewbox h3 {
+  margin: 0 0 6px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+}
+
+.page { display: none; }
+.page.on { display: block; }
+
+.card {
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 16px; padding: 18px 20px; margin-bottom: 12px;
+}
+.card h3 { margin: 0 0 8px; font-family: Fraunces, serif; font-weight: 500; font-size: 22px; }
+.card p { margin: 0; color: var(--mute); line-height: 1.55; }
+
+.seriesgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.bar { height: 6px; background: #1c2433; border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.bar > i { display: block; height: 100%; background: var(--gold); width: 0; }
+
+.footer {
+  margin-top: 28px; color: var(--dim); font-size: 12.5px; border-top: 1px solid var(--line2); padding-top: 16px;
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.empty { color: var(--dim); padding: 30px 8px; }
+.next {
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px;
+}
+.next strong { color: var(--gold2); }
+
+.infinite {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #1b3a6b; color: #f3ead6; border: 1px solid #3c6db5;
+  border-radius: 12px; padding: 10px 14px; text-decoration: none; font-weight: 700;
+}
+.infinite:hover { background: #244a86; }
+.infinite.missing { background: transparent; border-style: dashed; color: var(--dim); font-weight: 450; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Mainline DC</div>
+      <h1>Reading Log</h1>
+      <div class="sub">Prime-Earth books from each series’ most recent #1. All In + Next Level. Your thoughts stay in this browser. Critic reviews stay sealed until you mark an issue Read.</div>
+    </div>
+    <nav class="nav" aria-label="Sections">
+      <button data-page="order" aria-current="page">Order</button>
+      <button data-page="dash">Dashboard</button>
+      <button data-page="journal">Journal</button>
+      <button data-page="trades">Trades</button>
+      <button data-page="guide">Guide</button>
+    </nav>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="page on" id="page-order">
+    <div class="next" id="nextUp"></div>
+    <div class="toolbar">
+      <input class="search" id="q" placeholder="Search series, issue, arc, creator…">
+      <select id="seriesFilter"><option value="">All series</option></select>
+      <select id="statusFilter">
+        <option value="">All statuses</option>
+        <option>Unread</option>
+        <option>Reading</option>
+        <option>Read</option>
+        <option>Skipped</option>
+        <option>Upcoming</option>
+      </select>
+    </div>
+    <div class="chiprow" id="waves"></div>
+    <div class="layout">
+      <div class="list" id="list"></div>
+      <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
+      <aside class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle"></aside>
+    </div>
+  </section>
+
+  <section class="page" id="page-dash">
+    <div class="card">
+      <h3>Progress by series</h3>
+      <p>Upcoming issues are excluded from the percentage so the bar measures books you can actually read now.</p>
+    </div>
+    <div class="seriesgrid" id="seriesDash"></div>
+  </section>
+
+  <section class="page" id="page-journal">
+    <div class="card">
+      <h3>Journal</h3>
+      <p>Every issue you have written about, in the order you last touched it. Critic notes only appear here after a Read is logged.</p>
+    </div>
+    <div id="journal"></div>
+  </section>
+
+  <section class="page" id="page-trades">
+    <div class="card">
+      <h3>Collected editions</h3>
+      <p>From Comic Book Herald’s trade list plus later volumes announced through 2026–27.</p>
+    </div>
+    <div id="trades"></div>
+  </section>
+
+  <section class="page" id="page-guide">
+    <div class="card">
+      <h3>How this log works</h3>
+      <p>Pick a series or follow publication order. Read the issue. Log status, a rating, and your thoughts here. Then tell Grok you finished it — that is when critic reviews get written into this file. Until then the review panel stays locked, even if you already marked the issue Read.</p>
+    </div>
+    <div class="card">
+      <h3>House rule</h3>
+      <p>No scores, quotes, or recaps from AIPT, Multiversity, Comic Book Roundup, or anyone else until you report a Read. First impressions stay yours. After that, reviews are spoiler-light: tone and craft, not last-page surprises.</p>
+    </div>
+    <div class="card">
+      <h3>Start-here shortcuts</h3>
+      <p>Start at Superman (2023) #1, Wonder Woman (2023) #1, Flash (2023) #1, Green Lantern (2023) #1, or the 2025 Batman #1. All In Special frames the era. Next Level #1s in 2026 are standalone-friendly. Action, Detective, Nightwing, and other old-number books start at their All In jump-on issue, not at their original #1.</p>
+    </div>
+    <div id="cbh"></div>
+    <div class="card">
+      <h3>Your data</h3>
+      <p>Notes live in localStorage on this machine. Export a backup if you switch browsers. Import overwrites local notes only — it does not change the issue list.</p>
+      <div class="savebar" style="margin-top:12px">
+        <button type="button" id="exportBtn">Export notes</button>
+        <button type="button" class="ghost" id="importBtn">Import notes</button>
+        <button type="button" class="ghost" id="resetBtn">Reset my notes</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>Mainline DC from each title’s latest #1 through 9/16/26. Companion to the Absolute Universe log. <a href="../">Open Absolute log</a></div>
+    <div>Reviews hidden until Read · DC Infinite reader links where the library has the issue</div>
+  </footer>
+</div>
+
+<script>
+fetch('data.json', {cache:'no-store'}).then(r => {
+  if (!r.ok) throw new Error('Could not load data.json');
+  return r.json();
+}).then((DATA) => {
+const STORE = 'dc-mainline-reading-log-v1';
+
+const seriesAccent = (name) => {
+  const n = (name || '').toLowerCase();
+  if (n.includes('batman')) return 's-batman';
+  if (n.includes('wonder')) return 's-wonder';
+  if (n.includes('superman')) return 's-superman';
+  if (n.includes('flash')) return 's-flash';
+  if (n.includes('martian')) return 's-martian';
+  if (n.includes('lantern')) return 's-lantern';
+  if (n.includes('arrow')) return 's-arrow';
+  if (n.includes('catwoman') || n.includes('cassandra')) return 's-cat';
+  if (n.includes('evil')) return 's-evil';
+  return 's-other';
+};
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORE) || '{}'); }
+  catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem(STORE, JSON.stringify(state));
+}
+
+let state = loadState();
+let selectedId = null;
+let waveFilter = '';
+
+function merged(issue) {
+  const extra = (state[issue.id] || {});
+  return {
+    ...issue,
+    status: extra.status || issue.defaultStatus || 'Unread',
+    dateRead: extra.dateRead || '',
+    rating: extra.rating || '',
+    thoughts: extra.thoughts || '',
+    updated: extra.updated || ''
+  };
+}
+
+function allMerged() {
+  return DATA.issues.map(merged);
+}
+
+function stats() {
+  const rows = allMerged();
+  const count = (s) => rows.filter(r => r.status === s).length;
+  return {
+    total: rows.length,
+    read: count('Read'),
+    reading: count('Reading'),
+    unread: rows.filter(r => r.status === 'Unread').length,
+    upcoming: count('Upcoming'),
+    skipped: count('Skipped')
+  };
+}
+
+function nextUnread() {
+  return allMerged().find(r => r.status === 'Unread');
+}
+
+function renderKpis() {
+  const s = stats();
+  const denom = s.read + s.reading + s.unread + s.skipped;
+  const pct = denom ? Math.round((s.read / denom) * 100) : 0;
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><b>${s.total}</b><span>In tracker</span></div>
+    <div class="kpi"><b>${s.read}</b><span>Read</span></div>
+    <div class="kpi"><b>${s.reading}</b><span>Reading</span></div>
+    <div class="kpi"><b>${s.unread}</b><span>Unread</span></div>
+    <div class="kpi"><b>${pct}%</b><span>Logged complete</span></div>`;
+}
+
+function renderNext() {
+  const n = nextUnread();
+  document.getElementById('nextUp').innerHTML = n
+    ? `Next unread <strong>${n.key}</strong> · ${n.arc || n.wave} · ${n.priority}`
+    : `Nothing marked Unread. You are caught up, or everything left is Upcoming / Skipped.`;
+}
+
+function seriesNames() {
+  return [...new Set(DATA.issues.map(i => i.series))];
+}
+
+function populateFilters() {
+  const sel = document.getElementById('seriesFilter');
+  seriesNames().forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name; sel.appendChild(o);
+  });
+  const waves = [...new Set(DATA.issues.map(i => i.wave))];
+  document.getElementById('waves').innerHTML = ['All waves', ...waves].map((w,i) =>
+    `<button class="chip ${i===0?'on':''}" data-wave="${i===0?'':w}">${w}</button>`
+  ).join('');
+}
+
+function filtered() {
+  const q = document.getElementById('q').value.toLowerCase().trim();
+  const series = document.getElementById('seriesFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  return allMerged().filter(i => {
+    if (series && i.series !== series) return false;
+    if (status && i.status !== status) return false;
+    if (waveFilter && i.wave !== waveFilter) return false;
+    if (!q) return true;
+    return (i.key + ' ' + i.arc + ' ' + i.creators + ' ' + i.notes).toLowerCase().includes(q);
+  });
+}
+
+function renderList() {
+  const rows = filtered();
+  const box = document.getElementById('list');
+  if (!rows.length) {
+    box.innerHTML = '<div class="empty">No issues match those filters.</div>';
+    return;
+  }
+  box.innerHTML = rows.map(i => `
+    <button class="issue ${seriesAccent(i.series)} ${i.id===selectedId?'active':''}" data-id="${i.id}">
+      <div class="n">${String(i.id).padStart(2,'0')}</div>
+      <div>
+        <h3>${i.key}</h3>
+        <p>${i.arc || i.wave} · ${i.creators} · ${i.onsale}${i.dcInfinite ? ' · Infinite' : ''}</p>
+      </div>
+      <span class="badge ${i.status.toLowerCase()}">${i.status}</span>
+    </button>
+  `).join('');
+}
+
+function reviewPanel(issue) {
+  const readable = issue.status === 'Read' || issue.status === 'Skipped';
+  if (!readable) {
+    return `<div class="lockbox">
+      <h3>Reviews locked</h3>
+      <div>Critic notes stay hidden until you mark this issue Read (or Skipped). Read it first. Write what you thought. Then report it.</div>
+    </div>`;
+  }
+  if (!issue.reviews) {
+    const msg = `Read ${issue.key} — `;
+    return `<div class="pendingbox">
+      <h3>Ready — reviews pending</h3>
+      <div>You logged this. Send Grok the issue plus your thoughts to unlock a spoiler-light critic consensus. Suggested message:</div>
+      <div class="note" style="margin-top:10px">${msg}[your thoughts]</div>
+      <button type="button" class="ghost" data-copy="${encodeURIComponent(msg)}">Copy starter line</button>
+    </div>`;
+  }
+  return `<div class="reviewbox">
+    <h3>Reviews unlocked</h3>
+    <div>${issue.reviews.consensus || ''}</div>
+    <div class="hint" style="margin-top:8px">${issue.reviews.sources || ''}</div>
+  </div>`;
+}
+
+function renderDetail() {
+  const issue = allMerged().find(i => i.id === selectedId) || allMerged()[0];
+  selectedId = issue.id;
+  document.getElementById('detail').innerHTML = `
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-bar">
+      <div class="kicker">${issue.wave} · ${issue.priority} · ${issue.onsale}</div>
+      <button type="button" class="close-sheet" id="closeSheet">Close</button>
+    </div>
+    <h2 id="detailTitle">${issue.key}</h2>
+    <div class="meta">${issue.arc ? issue.arc + ' · ' : ''}${issue.creators}</div>
+    ${issue.notes ? `<div class="note">${issue.notes}</div>` : ''}
+    ${issue.dcInfinite
+      ? `<p><a class="infinite" href="${issue.dcInfinite}" target="_blank" rel="noopener">Read on DC Universe Infinite</a></p>`
+      : `<p><span class="infinite missing">Not on Infinite yet — too new, unreleased, or not a single issue</span></p>`}
+    <form class="form" id="logForm">
+      <div class="row2">
+        <div>
+          <label>Status</label>
+          <select name="status">
+            ${['Unread','Reading','Read','Skipped','Upcoming'].map(s =>
+              `<option ${s===issue.status?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label>Rating</label>
+          <select name="rating">
+            <option value="">—</option>
+            ${[1,2,3,4,5,6,7,8,9,10].map(n =>
+              `<option ${String(n)===String(issue.rating)?'selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label>Date read</label>
+        <input type="date" name="dateRead" value="${issue.dateRead || ''}">
+      </div>
+      <div>
+        <label>Your thoughts</label>
+        <textarea name="thoughts" placeholder="What worked, what didn’t, what you want to remember…">${issue.thoughts || ''}</textarea>
+      </div>
+      <div class="savebar">
+        <button type="submit">Save to this browser</button>
+        <button type="button" class="ghost" id="markRead">Mark Read today</button>
+      </div>
+      <div class="hint">Saving here does not publish anything. Tell Grok after you finish if you want critic reviews written into the log.</div>
+    </form>
+    ${reviewPanel(issue)}
+  `;
+  document.querySelectorAll('.issue').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.id) === selectedId);
+  });
+}
+
+function persistFromForm() {
+  const form = document.getElementById('logForm');
+  if (!form) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  state[selectedId] = {
+    status: data.status,
+    rating: data.rating,
+    dateRead: data.dateRead,
+    thoughts: data.thoughts,
+    updated: new Date().toISOString()
+  };
+  saveState(state);
+  renderAll();
+}
+
+function renderDash() {
+  const rows = allMerged();
+  const names = seriesNames();
+  document.getElementById('seriesDash').innerHTML = names.map(name => {
+    const set = rows.filter(r => r.series === name);
+    const read = set.filter(r => r.status === 'Read').length;
+    const upcoming = set.filter(r => r.status === 'Upcoming').length;
+    const avail = Math.max(set.length - upcoming, 1);
+    const pct = Math.round((read / avail) * 100);
+    return `<div class="card">
+      <h3 style="font-size:18px">${name}</h3>
+      <p>${read} read · ${set.length} in tracker · ${upcoming} upcoming</p>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+    </div>`;
+  }).join('');
+}
+
+function renderJournal() {
+  const entries = allMerged()
+    .filter(i => (i.thoughts || '').trim() || i.status === 'Read' || i.status === 'Skipped')
+    .sort((a,b) => (b.updated || '').localeCompare(a.updated || ''));
+  const box = document.getElementById('journal');
+  if (!entries.length) {
+    box.innerHTML = '<div class="card"><p>No journal entries yet. Open an issue, write a thought, save.</p></div>';
+    return;
+  }
+  box.innerHTML = entries.map(i => `
+    <div class="card">
+      <div class="eyebrow">${i.status}${i.rating ? ' · ' + i.rating + '/10' : ''}${i.dateRead ? ' · ' + i.dateRead : ''}</div>
+      <h3>${i.key}</h3>
+      <p>${i.thoughts || '<em>Marked without a write-up.</em>'}</p>
+      ${i.status==='Read' && i.reviews ? `<p style="margin-top:10px;color:var(--ok)">${i.reviews.consensus}</p>` : ''}
+      ${i.status==='Read' && !i.reviews ? `<p style="margin-top:10px">Reviews pending — report this Read to unlock critics.</p>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderTrades() {
+  document.getElementById('trades').innerHTML = DATA.trades.map(t => `
+    <div class="card">
+      <h3 style="font-size:20px">${t.name}</h3>
+      <p><strong style="color:var(--cream)">${t.collects}</strong>${t.notes ? ' — ' + t.notes : ''}</p>
+    </div>
+  `).join('');
+}
+
+function renderGuide() {
+  document.getElementById('cbh').innerHTML = DATA.cbhNotes.map(n => `
+    <div class="card"><h3>${n.title}</h3><p>${n.body}</p></div>
+  `).join('');
+}
+
+function renderAll() {
+  renderKpis();
+  renderNext();
+  renderList();
+  renderDetail();
+  renderDash();
+  renderJournal();
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + id));
+  document.querySelectorAll('.nav button').forEach(b => {
+    b.setAttribute('aria-current', b.dataset.page === id ? 'page' : 'false');
+  });
+}
+
+document.querySelector('.nav').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  showPage(b.dataset.page);
+});
+function isMobileSheet() {
+  return window.matchMedia('(max-width: 1040px)').matches;
+}
+function openSheet() {
+  document.body.classList.add('sheet-open');
+  const backdrop = document.getElementById('sheetBackdrop');
+  if (backdrop) backdrop.hidden = false;
+  const detail = document.getElementById('detail');
+  detail.scrollTop = 0;
+  const close = document.getElementById('closeSheet');
+  if (close) close.focus();
+}
+function closeSheet() {
+  document.body.classList.remove('sheet-open');
+  const backdrop = document.getElementById('sheetBackdrop');
+  if (backdrop) backdrop.hidden = true;
+}
+function openIssue(id) {
+  selectedId = Number(id);
+  renderList();
+  renderDetail();
+  if (isMobileSheet()) openSheet();
+  else document.getElementById('detail').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+document.getElementById('list').addEventListener('click', e => {
+  const b = e.target.closest('.issue'); if (!b) return;
+  e.preventDefault();
+  openIssue(b.dataset.id);
+});
+document.getElementById('nextUp').addEventListener('click', () => {
+  const n = nextUnread();
+  if (n) openIssue(n.id);
+});
+document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
+document.getElementById('detail').addEventListener('click', e => {
+  if (e.target.id === 'closeSheet') closeSheet();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSheet();
+});
+document.getElementById('q').addEventListener('input', renderList);
+document.getElementById('seriesFilter').addEventListener('change', renderList);
+document.getElementById('statusFilter').addEventListener('change', renderList);
+document.getElementById('waves').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  waveFilter = b.dataset.wave;
+  document.querySelectorAll('#waves .chip').forEach(c => c.classList.toggle('on', c === b));
+  renderList();
+});
+document.getElementById('detail').addEventListener('submit', e => {
+  e.preventDefault(); persistFromForm();
+});
+document.getElementById('detail').addEventListener('click', e => {
+  if (e.target.id === 'markRead') {
+    const form = document.getElementById('logForm');
+    form.status.value = 'Read';
+    if (!form.dateRead.value) form.dateRead.value = new Date().toISOString().slice(0,10);
+    persistFromForm();
+  }
+  const copy = e.target.dataset.copy;
+  if (copy) {
+    navigator.clipboard.writeText(decodeURIComponent(copy));
+    e.target.textContent = 'Copied';
+  }
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ version: 1, exported: new Date().toISOString(), notes: state }, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mainline-dc-notes.json';
+  a.click();
+});
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const parsed = JSON.parse(await file.text());
+  state = parsed.notes || parsed;
+  saveState(state);
+  renderAll();
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Clear all of your local notes and statuses? The issue list stays.')) return;
+  state = {};
+  saveState(state);
+  renderAll();
+});
+
+populateFilters();
+renderTrades();
+renderGuide();
+selectedId = (nextUnread() || DATA.issues[0]).id;
+renderAll();
+closeSheet();
+}).catch(err => { document.body.innerHTML = "<p style=\"padding:24px;font-family:sans-serif\">Failed to load data.json. " + err + "</p>"; });
+</script>
+</body>
+</html>
